@@ -55,7 +55,7 @@ public class Map extends Canvas {
         return new double[]{(this.middlepoint[0]+500)*zoomFaktor,(this.middlepoint[1]-500)*zoomFaktor};
     }
 
-    //draws basic grid on map
+    //draws basic grid on map (iterates many drawGRitLine methodes)
     private void drawGrit(){
         for(int i = 0; i < 10000; i = i+100) {
             drawGritLines(i, 0, i, 9000);
@@ -67,6 +67,7 @@ public class Map extends Canvas {
         context.strokeLine(0,500, 1000, 500);
     }
 
+    //draws a line from point x1 y1 to x2 y2
     private void drawGritLines(int x1, int y1, int x2, int y2) {
         context.setLineWidth(0.5);
         context.setStroke(Color.BLACK);
