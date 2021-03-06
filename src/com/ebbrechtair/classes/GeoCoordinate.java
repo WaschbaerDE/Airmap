@@ -16,4 +16,9 @@ public abstract class GeoCoordinate {
     public Double getLon() {
         return this.lon;
     }
+
+    public Double getYValue(){ return 111.3 * this.lat;}
+
+    public Double getXValue(){ return 111.3 * Math.cos(this.lat) * this.lon;}
+
 }

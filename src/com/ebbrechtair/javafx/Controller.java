@@ -9,10 +9,11 @@ import javafx.scene.layout.AnchorPane;
 
 public class Controller {
 
+    //Anlage der FXML Objekte
     @FXML
-    private TextField depaTextfield;
+    private TextField departmentTextfield;
     @FXML
-    private TextField destTextfield;
+    private TextField destinationTextfield;
     @FXML
     private Button processButton;
     @FXML
@@ -22,13 +23,18 @@ public class Controller {
     @FXML
     private AnchorPane coordinateAnchorPane;
 
+    //This event get triggered at the moment you press the Button processButton
+    //It extracts the input from the 2 input Textfields
     public void initializeProcess(javafx.event.ActionEvent actionEvent) throws InterruptedException {
-        String departureAirport = depaTextfield.getText();
-        String destinationAirport = destTextfield.getText();
+        String departureAirport = departmentTextfield.getText();
+        String destinationAirport = destinationTextfield.getText();
         System.out.println(departureAirport);
         System.out.println(destinationAirport);
     }
 
+    //This event get triggered at the moment you press the Button editRouteButton
+    //Idea to change this input to a list where you can click on an point to change this point??
+        //Much extra work
     public void editRoute(javafx.event.ActionEvent actionEvent) throws InterruptedException {
         String routeString = routeTextArea.getText();
         String[] routeArray = routeString.split(" ");
