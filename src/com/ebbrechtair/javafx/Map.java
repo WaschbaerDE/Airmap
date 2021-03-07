@@ -39,7 +39,9 @@ public class Map extends Canvas {
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
         setOnScroll(event -> {
             if(event.getDeltaY()>0){
-                this.zoomFaktor = this.zoomFaktor*(event.getDeltaY()/40)/Math.pow(2,0.25);
+                for(int i=0;i<Math.abs(event.getDeltaY()/40);i++) {
+                    this.zoomFaktor = this.zoomFaktor / Math.pow(2, 0.25);
+                }
 
                 this.middlepoint[0] = this.middlepoint[0]+((event.getX()-500)*this.zoomFaktor/4);
                 this.middlepoint[1] =  this.middlepoint[1]+((500-event.getY())*this.zoomFaktor/4);
@@ -47,7 +49,9 @@ public class Map extends Canvas {
 
             }
             if(event.getDeltaY()<0){
-                this.zoomFaktor = -this.zoomFaktor/((event.getDeltaY()/40)/Math.pow(2,0.25));
+                for(int i=0;i<Math.abs(event.getDeltaY()/40);i++) {
+                    this.zoomFaktor = this.zoomFaktor * Math.pow(2, 0.25);
+                }
 
                 this.middlepoint[0] = this.middlepoint[0]-((event.getX()-500)*this.zoomFaktor/4);
                 this.middlepoint[1] =  this.middlepoint[1]-((500-event.getY())*this.zoomFaktor/4);
