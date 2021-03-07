@@ -24,6 +24,7 @@ public class Map extends Canvas {
 
         drawGrit();
         drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
+        drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -33,51 +34,57 @@ public class Map extends Canvas {
 
                 this.middlepoint[0] = this.middlepoint[0]+((event.getX()-500)*this.zoomFaktor/4);
                 this.middlepoint[1] =  this.middlepoint[1]+((500-event.getY())*this.zoomFaktor/4);
-                System.out.println("Zoom-In: "+this.middlepoint[0]+" "+ this.middlepoint[1]);
+                System.out.println("Zoom-In-Event: "+this.middlepoint[0]+" "+ this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
 
             }
             if(event.getDeltaY()<0){
+                this.zoomFaktor = -this.zoomFaktor/((event.getDeltaY()/40)/Math.pow(2,0.25));
+
                 this.middlepoint[0] = this.middlepoint[0]-((event.getX()-500)*this.zoomFaktor/4);
                 this.middlepoint[1] =  this.middlepoint[1]-((500-event.getY())*this.zoomFaktor/4);
-                System.out.println("Zoom-Out: "+this.middlepoint[0]+" "+ this.middlepoint[1]);
+                System.out.println("Zoom-Out-Event: X: "+this.middlepoint[0]+" Y: "+ this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
             }
-            context.setFill(Color.WHITE);
+            clearMap();
+            drawGrit();
+
 
             drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
+            drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
+
 
         });
-
+        setOnMousePressed (event -> {
+            this.lastX = event.getX();
+            this.lastY = event.getY();
+        });
         //This event get triggered while dragging(holding Mouse1 und dragging the Mouse)
         setOnMouseDragged(event -> {
-            if(this.lastX==0&&this.lastY==0) {
-                this.lastX = event.getX();
-                this.lastY = event.getY();
-            }
-            this.middlepoint[0] = this.middlepoint[0]-(event.getX()-this.lastX)*this.zoomFaktor;
-            this.middlepoint[1] = this.middlepoint[1]-(this.lastY-event.getY())*this.zoomFaktor;
+
+            this.middlepoint[0] = this.middlepoint[0] - (event.getX() - this.lastX) * this.zoomFaktor;
+            this.middlepoint[1] = this.middlepoint[1] - (this.lastY - event.getY()) * this.zoomFaktor;
             this.lastX = event.getX();
             this.lastY = event.getY();
 
-            context.clearRect(0,0,1000,1000);
+            clearMap();
+            drawGrit();
+
 
             drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
+            drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
-            System.out.println(this.middlepoint[0]+" "+this.middlepoint[1]);
+
+            System.out.println("Dragevent: "+this.middlepoint[0]+" "+this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
         });
     }
 
     //gets coords of leftuppercorner in km
-
-    //WRONG
     public double[] getLeftUpperCorner() {
-        return new double[]{(this.middlepoint[0]-500)*zoomFaktor,(this.middlepoint[1]+500)*zoomFaktor};
+        return new double[]{this.middlepoint[0] - (500 * this.zoomFaktor),this.middlepoint[1] + (500 * this.zoomFaktor)};
     }
 
     //gets coords of rigthbottomcorner in km
-
-    //WRONG
     public double[] getRigthBottomCorner() {
-        return new double[]{(this.middlepoint[0]+500)*zoomFaktor,(this.middlepoint[1]-500)*zoomFaktor};
+        return new double[]{this.middlepoint[0] + (500 * this.zoomFaktor),this.middlepoint[1] - (500 * this.zoomFaktor)};
     }
 
     //draws basic grid on map (iterates many drawGRitLine methodes)
@@ -99,22 +106,31 @@ public class Map extends Canvas {
         context.strokeLine(x1, y1, x2, y2);
     }
 
-    //Die Methode drawAirport nimmt einen Airport und malt ein bild von einem absoluten pfad auf die map
-//pfad muss relativ gestalten werden!
-    private void drawAirport(Airport airport){
-        context.drawImage(new Image("file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_1.png"),490,490,20,20);
-
-    }
-
     //Drag and drop funktioniert bei ersten mal super nach dem los lassen geht es nicht
+//pfad muss relativ gestalten werden!
     private void drawGeoCoordinate(GeoCoordinate geoCoordinate){
-        String url ="";
+        String url ="file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_SansSerif_Black_";
         if(geoCoordinate instanceof Airport){
-            url = "file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_1.png";
+            //Airport
+            url += "1";
         }else if(geoCoordinate instanceof Fix){
-            url = "file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_2.png";
+            //Fix
+            url += "2";
         }else if(geoCoordinate instanceof Navaid){
-            url = "file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_3.png";
+            if(1==1){
+                //DME
+                url += "3";
+            }else if(1==1){
+                //NDB
+                url += "4";
+            }else if(1==1){
+                //VOR
+                url += "5";
+            }else if(1==1){
+                //VOR_DME
+                url += "6";
+            }
+
         }
 
         Double x = (geoCoordinate.getXValue()-this.middlepoint[0])/this.zoomFaktor;
@@ -126,5 +142,10 @@ public class Map extends Canvas {
 
 
     }
+
+    private void clearMap(){
+        context.clearRect(0,0,1000,1000);
+    }
+
 
 }
