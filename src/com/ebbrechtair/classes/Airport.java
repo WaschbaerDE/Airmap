@@ -9,7 +9,7 @@ public class Airport extends GeoCoordinate {
     private int maxRunwayLength;
     private String b01;
 
-    public Airport(Double lat, Double lon, String icaoCode, String airportName, int altitudeAirportInFeet, String a01, String a02, int maxRunwayLength, String b01) {
+    public Airport( String icaoCode, String airportName,Double lat, Double lon, int altitudeAirportInFeet, String a01, String a02, int maxRunwayLength, String b01) {
         super(lat, lon);
         this.icaoCode = icaoCode;
         this.airportName = airportName;
@@ -18,5 +18,9 @@ public class Airport extends GeoCoordinate {
         this.a02 = a02;
         this.maxRunwayLength = maxRunwayLength;
         this.b01 = b01;
+    }
+
+    public String getIcaoCode() {
+        return icaoCode;
     }
 }

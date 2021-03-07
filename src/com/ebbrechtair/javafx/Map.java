@@ -1,14 +1,20 @@
 package com.ebbrechtair.javafx;
 
 import com.ebbrechtair.classes.*;
+import com.ebbrechtair.util.Converter;
+import com.ebbrechtair.util.SqlConnector;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
-import java.awt.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class Map extends Canvas {
+
+    //Koordinaten sind immer als X | Y gespeichert!!!!! -> Lon | Lat
     private final double[] middlepoint;//This is the 500|500 point / the middlepoint corner of the map/canvas in km
     private double zoomFaktor;//This is the faktor between pixel to distance in km 1000px = 200km BASIC
                                 // VERDOPPELT SICH ALLE 4 RAD KLICKS
@@ -20,11 +26,14 @@ public class Map extends Canvas {
     public Map() {
         super(1000, 1000);
         this.zoomFaktor = 0.2;
-        this.middlepoint = new double[]{0,0};
+
+        this.middlepoint = new double[]{612.728065,5568.679578};
 
         drawGrit();
-        drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
-        drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
+
+        populateAirports();
+        //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
+        //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -47,9 +56,10 @@ public class Map extends Canvas {
             clearMap();
             drawGrit();
 
+            populateAirports();
 
-            drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
-            drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
+            //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
+            //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
 
         });
@@ -68,12 +78,15 @@ public class Map extends Canvas {
             clearMap();
             drawGrit();
 
+            populateAirports();
 
-            drawGeoCoordinate(new Airport(0.0,0.0,"1","1",1,"1","1",1,"1"));
-            drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
+            //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
+            //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
 
             System.out.println("Dragevent: "+this.middlepoint[0]+" "+this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
+
+            System.out.println(getLeftUpperCorner()[0]+" "+getLeftUpperCorner()[1]);
         });
     }
 
@@ -109,43 +122,75 @@ public class Map extends Canvas {
     //Drag and drop funktioniert bei ersten mal super nach dem los lassen geht es nicht
 //pfad muss relativ gestalten werden!
     private void drawGeoCoordinate(GeoCoordinate geoCoordinate){
-        String url ="file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\icons\\Transparent_Number_SansSerif_Black_";
+        String url ="file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\ressources\\icons\\Transparent_Number_SansSerif_Black_";
         if(geoCoordinate instanceof Airport){
             //Airport
-            url += "1";
+            if(((Airport) geoCoordinate).getIcaoCode().equals("EDDF")){
+                url += "0.png";
+            }else{
+                url += "1.png";
+
+            }
         }else if(geoCoordinate instanceof Fix){
             //Fix
-            url += "2";
+            url += "2.png";
         }else if(geoCoordinate instanceof Navaid){
             if(1==1){
                 //DME
-                url += "3";
+                url += "3.png";
             }else if(1==1){
                 //NDB
-                url += "4";
+                url += "4.png";
             }else if(1==1){
                 //VOR
-                url += "5";
+                url += "5.png";
             }else if(1==1){
                 //VOR_DME
-                url += "6";
+                url += "6.png";
             }
 
         }
 
-        Double x = (geoCoordinate.getXValue()-this.middlepoint[0])/this.zoomFaktor;
-        Double y = (geoCoordinate.getYValue()+this.middlepoint[1])/this.zoomFaktor;
+        Double x = (geoCoordinate.getXValue()-getLeftUpperCorner()[0])/this.zoomFaktor;
+        Double y = (-geoCoordinate.getYValue()+getLeftUpperCorner()[1])/this.zoomFaktor;
+
         Double iconsizeX = 20.0;
         Double iconsizeY = 20.0;
 
-        context.drawImage(new Image(url),x-(iconsizeX/2)+(-this.middlepoint[0]/4*this.zoomFaktor+500),y-(iconsizeY/2)+(this.middlepoint[1]/4*this.zoomFaktor+500),iconsizeX,iconsizeY);
-
-
+        Converter converter = new Converter();
+        context.drawImage(new Image(url),x-(iconsizeX/2),y-(iconsizeY/2),iconsizeX,iconsizeY);
     }
 
     private void clearMap(){
         context.clearRect(0,0,1000,1000);
     }
 
+    private void populateAirports(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
 
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        String sqlstatement = "SELECT * FROM db_Airport WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + ";";
+
+        try {
+            SqlConnector sqlConnector = new SqlConnector();
+            Connection connection = sqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Airport(resultSet.getString(2),resultSet.getString(3),resultSet.getDouble(4),resultSet.getDouble(5),resultSet.getInt(6),resultSet.getString(7),resultSet.getString(8),resultSet.getInt(9),resultSet.getString(10)));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 }
