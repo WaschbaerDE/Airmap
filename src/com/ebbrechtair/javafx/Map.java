@@ -21,19 +21,31 @@ public class Map extends Canvas {
     private double lastX;
     private double lastY;
 
+    private final Image image0;
+    private final Image image1;
+    private final Image image2;
+    private final Image image3;
+    private final Image image4;
+    private final Image image5;
+    private final Image image6;
+
     private final GraphicsContext context = this.getGraphicsContext2D();
 
     public Map() {
         super(1000, 1000);
         this.zoomFaktor = 0.2;
-
         this.middlepoint = new double[]{612.728065,5568.679578};
 
-        drawGrit();
+        this.image0 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_0.png");
+        this.image1 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_1.png");
+        this.image2 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_2.png");
+        this.image3 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_3.png");
+        this.image4 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_4.png");
+        this.image5 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_5.png");
+        this.image6 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_6.png");
 
+        drawGrit();
         populateAirports();
-        //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
-        //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -59,12 +71,7 @@ public class Map extends Canvas {
             }
             clearMap();
             drawGrit();
-
             populateAirports();
-
-            //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
-            //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
-
 
         });
         setOnMousePressed (event -> {
@@ -81,16 +88,10 @@ public class Map extends Canvas {
 
             clearMap();
             drawGrit();
-
             populateAirports();
-
-            //drawGeoCoordinate(new Airport("1","1",50.033306,8.570456,1,"1","1",1,"1"));
-            //drawGeoCoordinate(new Fix(0.1,0.1,"name","ac"));
-
 
             System.out.println("Dragevent: "+this.middlepoint[0]+" "+this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
 
-            System.out.println(getLeftUpperCorner()[0]+" "+getLeftUpperCorner()[1]);
         });
     }
 
@@ -126,43 +127,43 @@ public class Map extends Canvas {
     //Drag and drop funktioniert bei ersten mal super nach dem los lassen geht es nicht
 //pfad muss relativ gestalten werden!
     private void drawGeoCoordinate(GeoCoordinate geoCoordinate){
-        String url ="file:\\E:\\Dokumente\\IntelliJ\\Airmap\\src\\com\\ebbrechtair\\ressources\\icons\\Transparent_Number_SansSerif_Black_";
+        Image currentIcon = null;
         if(geoCoordinate instanceof Airport){
             //Airport
             if(((Airport) geoCoordinate).getIcaoCode().equals("EDDF")){
-                url += "0.png";
+                currentIcon = this.image0;
             }else{
-                url += "1.png";
+                currentIcon = this.image1;
 
             }
         }else if(geoCoordinate instanceof Fix){
             //Fix
-            url += "2.png";
+            currentIcon = this.image2;
         }else if(geoCoordinate instanceof Navaid){
             if(1==1){
                 //DME
-                url += "3.png";
+                currentIcon = this.image3;
             }else if(1==1){
                 //NDB
-                url += "4.png";
+                currentIcon = this.image4;
             }else if(1==1){
                 //VOR
-                url += "5.png";
+                currentIcon = this.image5;
             }else if(1==1){
                 //VOR_DME
-                url += "6.png";
+                currentIcon = this.image6;
             }
 
         }
 
-        Double x = (geoCoordinate.getXValue()-getLeftUpperCorner()[0])/this.zoomFaktor;
-        Double y = (-geoCoordinate.getYValue()+getLeftUpperCorner()[1])/this.zoomFaktor;
+        double x = (geoCoordinate.getXValue()-getLeftUpperCorner()[0])/this.zoomFaktor;
+        double y = (-geoCoordinate.getYValue()+getLeftUpperCorner()[1])/this.zoomFaktor;
 
-        Double iconsizeX = 20.0;
-        Double iconsizeY = 20.0;
+        double iconsizeX = 20.0;
+        double iconsizeY = 20.0;
 
         Converter converter = new Converter();
-        context.drawImage(new Image(url),x-(iconsizeX/2),y-(iconsizeY/2),iconsizeX,iconsizeY);
+        context.drawImage(currentIcon,x-(iconsizeX/2),y-(iconsizeY/2),iconsizeX,iconsizeY);
     }
 
     private void clearMap(){
@@ -178,12 +179,13 @@ public class Map extends Canvas {
         double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
         double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
         double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+        System.out.println("LO: "+leftUpperCorner[0]+" "+leftUpperCorner[1]);
 
         String sqlstatement = "SELECT * FROM db_Airport WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + ";";
 
         try {
             SqlConnector sqlConnector = new SqlConnector();
-            Connection connection = sqlConnector.getSQLConnection();
+            Connection connection = SqlConnector.getSQLConnection();
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sqlstatement);
 
