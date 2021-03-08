@@ -16,9 +16,11 @@ public abstract class GeoCoordinate {
     public Double getLon() {
         return this.lon;
     }
+    //ausgabe in km
+        //public Double getYValue(){ return 111.3 * this.lat;}
+        //public Double getXValue(){ return 111.3 * Math.cos(this.lat*Math.PI/180) * this.lon;}
 
-    public Double getYValue(){ return 111.3 * this.lat;}
-
-    public Double getXValue(){ return 111.3 * Math.cos(this.lat*Math.PI/180) * this.lon;}
-
+    //ausgabe in seemeilen
+        public Double getYValue(){ return this.lat*60;}
+        public Double getXValue(){ return this.lon*60;}
 }
