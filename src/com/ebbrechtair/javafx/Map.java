@@ -33,8 +33,8 @@ public class Map extends Canvas {
 
     public Map() {
         super(1000, 1000);
-        this.zoomFaktor = 0.02;
-        this.middlepoint = new double[]{612.728065,5568.679578};
+        this.zoomFaktor = 0.2;
+        this.middlepoint = new double[]{8.566084*60,50.038312*60};
 
         this.image0 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_0.png");
         this.image1 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_1.png");
