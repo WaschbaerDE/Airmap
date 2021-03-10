@@ -175,6 +175,7 @@ public class Map extends Canvas {
         //populateRunway();
         populateAirway();
 
+
     }
     private void populateAirport(){
         double[] leftUpperCorner = getLeftUpperCorner();
