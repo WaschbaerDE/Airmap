@@ -16,7 +16,7 @@ public class Map extends Canvas {
 
     //Koordinaten sind immer als X | Y gespeichert!!!!! -> Lon | Lat
     private final double[] middlepoint;//This is the 500|500 point / the middlepoint corner of the map/canvas in km
-    private double zoomFaktor;//This is the faktor between pixel to distance in km 1000px = 200km BASIC // 1000px 200seemeilen
+    private double zoomFaktor;//This is the faktor between pixel to distance in nauticmiles 1000px 200seemeilen
                                 // VERDOPPELT SICH ALLE 4 RAD KLICKS
     private double lastX;
     private double lastY;
@@ -33,12 +33,12 @@ public class Map extends Canvas {
 
     public Map() {
         super(1000, 1000);
+
         this.zoomFaktor = 0.2;
         this.middlepoint = new double[]{8.566084*60,50.038312*60};
 
         loadImages();
         populateGeoCoordinates();
-        populateAirway();
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -173,7 +173,7 @@ public class Map extends Canvas {
         //populateFix();
         populateNavaid();
         //populateRunway();
-        //populateAirway
+        populateAirway();
 
     }
     private void populateAirport(){
