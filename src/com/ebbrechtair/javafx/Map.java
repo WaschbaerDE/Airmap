@@ -21,13 +21,13 @@ public class Map extends Canvas {
     private double lastX;
     private double lastY;
 
-    private final Image image0;
-    private final Image image1;
-    private final Image image2;
-    private final Image image3;
-    private final Image image4;
-    private final Image image5;
-    private final Image image6;
+    private Image imageAirportVFR;
+    private Image imageAirportIFR;
+    private Image image2;
+    private Image imageNavaidDME;
+    private Image imageNavaidNDB;
+    private Image imageNavaidVOR;
+    private Image iamgeNavaidVORDME;
 
     private final GraphicsContext context = this.getGraphicsContext2D();
 
@@ -36,16 +36,8 @@ public class Map extends Canvas {
         this.zoomFaktor = 0.2;
         this.middlepoint = new double[]{8.566084*60,50.038312*60};
 
-        this.image0 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_0.png");
-        this.image1 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_1.png");
-        this.image2 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_2.png");
-        this.image3 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_3.png");
-        this.image4 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_4.png");
-        this.image5 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_5.png");
-        this.image6 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_6.png");
-
-        drawGrit();
-        populateAirports();
+        loadImages();
+        populateGeoCoordinates();
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -70,14 +62,15 @@ public class Map extends Canvas {
                 System.out.println("Zoom-Out-Event: X: "+this.middlepoint[0]+" Y: "+ this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
             }
             clearMap();
-            drawGrit();
-            populateAirports();
+            populateGeoCoordinates();
 
         });
+        //This event is triggered on press of mouse
         setOnMousePressed (event -> {
             this.lastX = event.getX();
             this.lastY = event.getY();
         });
+
         //This event get triggered while dragging(holding Mouse1 und dragging the Mouse)
         setOnMouseDragged(event -> {
 
@@ -87,20 +80,19 @@ public class Map extends Canvas {
             this.lastY = event.getY();
 
             clearMap();
-            drawGrit();
-            populateAirports();
+            populateGeoCoordinates();
 
             System.out.println("Dragevent: "+this.middlepoint[0]+" "+this.middlepoint[1]+" Zoom: 1000px ="+this.zoomFaktor*1000+"km");
 
         });
     }
 
-    //gets coords of leftuppercorner in km
+    //gets coords of leftuppercorner in nauticmiles
     public double[] getLeftUpperCorner() {
         return new double[]{this.middlepoint[0] - (500 * this.zoomFaktor),this.middlepoint[1] + (500 * this.zoomFaktor)};
     }
 
-    //gets coords of rigthbottomcorner in km
+    //gets coords of rigthbottomcorner in nauticmiles
     public double[] getRigthBottomCorner() {
         return new double[]{this.middlepoint[0] + (500 * this.zoomFaktor),this.middlepoint[1] - (500 * this.zoomFaktor)};
     }
@@ -130,28 +122,28 @@ public class Map extends Canvas {
         Image currentIcon = null;
         if(geoCoordinate instanceof Airport){
             //Airport
-            if(((Airport) geoCoordinate).getIcaoCode().equals("EDDF")){
-                currentIcon = this.image0;
+            if(((Airport) geoCoordinate).isIfr()){
+                currentIcon = this.imageAirportIFR;
             }else{
-                currentIcon = this.image1;
+                currentIcon = this.imageAirportVFR;
 
             }
         }else if(geoCoordinate instanceof Fix){
             //Fix
             currentIcon = this.image2;
         }else if(geoCoordinate instanceof Navaid){
-            if(1==1){
+            if(geoCoordinate instanceof Navaid.DME){
                 //DME
-                currentIcon = this.image3;
-            }else if(1==1){
+                currentIcon = this.imageNavaidDME;
+            }else if(geoCoordinate instanceof Navaid.NDB){
                 //NDB
-                currentIcon = this.image4;
-            }else if(1==1){
+                currentIcon = this.imageNavaidNDB;
+            }else if(geoCoordinate instanceof Navaid.VOR){
                 //VOR
-                currentIcon = this.image5;
-            }else if(1==1){
+                currentIcon = this.imageNavaidVOR;
+            }else if(geoCoordinate instanceof Navaid.VOR_DME){
                 //VOR_DME
-                currentIcon = this.image6;
+                currentIcon = this.iamgeNavaidVORDME;
             }
 
         }
@@ -170,33 +162,217 @@ public class Map extends Canvas {
         context.clearRect(0,0,1000,1000);
     }
 
-    private void populateAirports(){
+    /**
+     * These following Methodes are used to populate all the GeoCoordinates of the map
+     *
+     *
+     */
+
+    private void populateGeoCoordinates(){
+        populateAirport();
+        //populateFix();
+        populateNavaid();
+        //populateRunway();
+        //populateAirway
+
+    }
+    private void populateAirport(){
         double[] leftUpperCorner = getLeftUpperCorner();
         double[] rigthBootomCorner = getRigthBottomCorner();
         Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
 
         double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
         double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
         double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
         double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
-        System.out.println("LO: "+leftUpperCorner[0]+" "+leftUpperCorner[1]);
-
-        String sqlstatement = "SELECT * FROM db_Airport WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + ";";
 
         try {
-            SqlConnector sqlConnector = new SqlConnector();
             Connection connection = SqlConnector.getSQLConnection();
             Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(sqlstatement);
+
+            sqlstatement = "SELECT * FROM db_Airport WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + ";";
+            resultSet = statement.executeQuery(sqlstatement);
 
             while(resultSet.next()){
-                drawGeoCoordinate(new Airport(resultSet.getString(2),resultSet.getString(3),resultSet.getDouble(4),resultSet.getDouble(5),resultSet.getInt(6),resultSet.getString(7),resultSet.getString(8),resultSet.getInt(9),resultSet.getString(10)));
+                drawGeoCoordinate(new Airport(resultSet.getString("ICAOCode"),resultSet.getString("AirportName"),resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getInt("AltitudeAirportInFeet"),resultSet.getString("a01"),resultSet.getString("a02"),resultSet.getInt("MaxRunwayLength"),resultSet.getString("b01"),resultSet.getInt("IFR")));
+            }
+        connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void populateFix(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Fix WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + ";";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Fix(resultSet.getString("FixID"),resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getString("Areacode")));
             }
             connection.close();
 
         }catch (Exception e) {
             e.printStackTrace();
         }
-
     }
+
+    private void populateNavaid(){
+        populateDME();
+        populateVOR();
+        populateVORDME();
+        populateNDB();
+    }
+
+    private void populateDME(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Navaid WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + " AND DMECapability = 1 AND RadialCapability = 0;";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Navaid.DME(resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getString("NavaidID"),resultSet.getString("NavaidName"),resultSet.getDouble("Frequency"),resultSet.getInt("radialCapability"),resultSet.getInt("DMECapability"),resultSet.getString ("a01"),resultSet.getInt("Altitude"),resultSet.getString("AreaCode"),resultSet.getString("a02")));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateVOR(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Navaid WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + " AND DMECapability = 0 AND RadialCapability = 1;";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Navaid.VOR(resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getString("NavaidID"),resultSet.getString("NavaidName"),resultSet.getDouble("Frequency"),resultSet.getInt("radialCapability"),resultSet.getInt("DMECapability"),resultSet.getString ("a01"),resultSet.getInt("Altitude"),resultSet.getString("AreaCode"),resultSet.getString("a02")));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateVORDME(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Navaid WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + " AND DMECapability = 1 AND RadialCapability = 1;";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Navaid.VOR_DME(resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getString("NavaidID"),resultSet.getString("NavaidName"),resultSet.getDouble("Frequency"),resultSet.getInt("radialCapability"),resultSet.getInt("DMECapability"),resultSet.getString ("a01"),resultSet.getInt("Altitude"),resultSet.getString("AreaCode"),resultSet.getString("a02")));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void populateNDB(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Navaid WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + " AND DMECapability = 0 AND RadialCapability = 0;";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawGeoCoordinate(new Navaid.NDB(resultSet.getDouble("Lat"),resultSet.getDouble("Lon"),resultSet.getString("NavaidID"),resultSet.getString("NavaidName"),resultSet.getDouble("Frequency"),resultSet.getInt("radialCapability"),resultSet.getInt("DMECapability"),resultSet.getString ("a01"),resultSet.getInt("Altitude"),resultSet.getString("AreaCode"),resultSet.getString("a02")));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadImages(){
+        this.imageAirportVFR =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Airport_VFR.png");
+        this.imageAirportIFR =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Airport_IFR.png");
+        this.image2 =new Image("com\\ebbrechtair\\ressources\\icons\\Transparent_Number_20px_2.png");
+        this.imageNavaidDME =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Navaid_DME.png");
+        this.imageNavaidNDB =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Navaid_NDB.png");
+        this.imageNavaidVOR =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Navaid_VOR.png");
+        this.iamgeNavaidVORDME =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Navaid_VORDME.png");
+    }
+
+    private void setMiddlepoint(GeoCoordinate geoCoordinate){
+        this.middlepoint[0]= geoCoordinate.getXValue()*60;
+        this.middlepoint[1]= geoCoordinate.getYValue()*60;
+    }
+
+
+
+
+
 }
