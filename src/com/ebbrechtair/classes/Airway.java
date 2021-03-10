@@ -25,4 +25,12 @@ public class Airway extends GeoCoordinate{
         this.outBoundCourse = outBoundCourse;
         this.legLength = legLength;
     }
+
+    public Double getYNext() {
+        return this.latNext * 60;
+    }
+
+    public Double getXNext() {
+        return this.lonNext * 60;
+    }
 }

@@ -12,6 +12,9 @@ public class Converter {
 //von seemeilen
     public Double ConvertYInLat(double y){return y / 60;}
     public Double ConvertXInLon(double x, double y){return x /60;}
+    public Double ConvertLatInY(double lat){return lat *60;}
+    public Double ConvertLonInX(double lon){return lon *60;}
+
 
 
 }

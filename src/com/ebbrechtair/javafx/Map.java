@@ -38,6 +38,7 @@ public class Map extends Canvas {
 
         loadImages();
         populateGeoCoordinates();
+        populateAirway();
 
         //This event get triggered on Scrolling with Mouse3-button
         //the new zoomfaktor is the old one times the scroll /40 * the faktor to zoom x2 with 4 wheel clicks
@@ -145,7 +146,6 @@ public class Map extends Canvas {
                 //VOR_DME
                 currentIcon = this.iamgeNavaidVORDME;
             }
-
         }
 
         double x = (geoCoordinate.getXValue()-getLeftUpperCorner()[0])/this.zoomFaktor;
@@ -356,6 +356,35 @@ public class Map extends Canvas {
         }
     }
 
+    private void populateAirway(){
+        double[] leftUpperCorner = getLeftUpperCorner();
+        double[] rigthBootomCorner = getRigthBottomCorner();
+        Converter converter = new Converter();
+        String sqlstatement = null;
+        ResultSet resultSet = null;
+
+        double maxLat = converter.ConvertYInLat(leftUpperCorner[1]);
+        double minLat = converter.ConvertYInLat(rigthBootomCorner[1]);
+        double minLon = converter.ConvertXInLon(leftUpperCorner[0],leftUpperCorner[1]);
+        double maxLon = converter.ConvertXInLon(rigthBootomCorner[0],rigthBootomCorner[1]);
+
+        try {
+            Connection connection = SqlConnector.getSQLConnection();
+            Statement statement = connection.createStatement();
+
+            sqlstatement = "SELECT * FROM db_Airway WHERE Lat > " + minLat + " AND Lat < " + maxLat + " AND Lon > " + minLon + " AND Lon < " + maxLon + " OR LatNext > " + minLat + " AND LatNext < " + maxLat + " AND LonNext > " + minLon + " AND LonNext < " + maxLon + ";";
+            resultSet = statement.executeQuery(sqlstatement);
+
+            while(resultSet.next()){
+                drawAirway(new Airway(resultSet.getString("AirwayID"),resultSet.getInt("AirwayPartition"),resultSet.getString("FixID"),resultSet.getDouble("Lon"),resultSet.getDouble("Lat"),resultSet.getString("IDOfNextFix"),resultSet.getDouble("LonNext"),resultSet.getDouble("LatNext"),resultSet.getInt("InboundCourse"),resultSet.getInt("OutboundCourse"),resultSet.getDouble("LegLength")));
+            }
+            connection.close();
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void loadImages(){
         this.imageAirportVFR =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Airport_VFR.png");
         this.imageAirportIFR =new Image("com\\ebbrechtair\\ressources\\blackicons\\20px_Airport_IFR.png");
@@ -371,8 +400,18 @@ public class Map extends Canvas {
         this.middlepoint[1]= geoCoordinate.getYValue()*60;
     }
 
+    private void drawAirway(GeoCoordinate geoCoordinate){
+        Converter converter = new Converter();
 
+        Double starty = (-geoCoordinate.getYValue()+getLeftUpperCorner()[1])/this.zoomFaktor;
+        Double startx = (geoCoordinate.getXValue()-getLeftUpperCorner()[0])/this.zoomFaktor;
+        Double endy = (-((Airway)geoCoordinate).getYNext()+getLeftUpperCorner()[1])/this.zoomFaktor;
+        Double endx = (((Airway)geoCoordinate).getXNext()-getLeftUpperCorner()[0])/this.zoomFaktor;
 
+        context.setStroke(Color.BLUE);
+        context.setLineWidth(3.0);
+        context.strokeLine(startx,starty,endx,endy);
 
+    }
 
 }
